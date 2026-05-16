@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  posewave-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: posewave-api
+    ports:
+      - "8000:8000"
+    environment:
+      - LOG_LEVEL=INFO
+      - SAMPLE_RATE=100.0
+    volumes:
+      - ./logs:/app/logs
+      - ./models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  posewave-dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    container_name: posewave-dashboard
+    ports:
+      - "3000:80"
+    depends_on:
+      - posewave-api
+    environment:
+      - API_URL=http://posewave-api:8000
+    restart: unless-stopped
+
+networks:
+  default:
+    name: posewave-network
